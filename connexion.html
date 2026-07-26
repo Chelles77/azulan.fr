@@ -103,28 +103,39 @@
     </div>
 
     <script>
-        function handleLogin(e) {
+        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://azulan-fr.onrender.com/api';
+
+        async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
-            // Vérifier si c'est l'admin
-            if (email === 'admin@azulan.fr' && password === 'admin123') {
-                localStorage.setItem('azulan_user', JSON.stringify({email, role: 'admin'}));
-                window.location.href = 'admin.html';
-                return;
-            }
-            
-            // Vérifier les utilisateurs
-            const users = JSON.parse(localStorage.getItem('azulan_users') || '{}');
-            if (users[email] && users[email].password === password) {
-                localStorage.setItem('azulan_user', JSON.stringify({email, role: 'client'}));
-                window.location.href = 'index.html';
-            } else {
-                showMessage('❌ Email ou mot de passe incorrect', 'error');
+
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!res.ok) {
+                    throw new Error('Email ou mot de passe incorrect');
+                }
+
+                const data = await res.json();
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                // Rediriger vers admin si c'est l'admin, sinon vers index
+                if (email === 'admin@azulan.fr') {
+                    window.location.href = 'admin-v2.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (err) {
+                showMessage('❌ ' + err.message, 'error');
             }
         }
-        
+
         function showMessage(text, type) {
             const msg = document.getElementById('message');
             msg.textContent = text;

@@ -42,36 +42,52 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('🔑 Login attempt:', email);
 
     // Find user (try DB first, fallback to mock)
     let user = null;
     try {
       user = await User.findOne({ where: { email } });
+      if (user) console.log('✅ User found in DB');
     } catch (err) {
       console.log('DB error, using mock:', err.message);
-      user = await MockData.findUserByEmail(email);
     }
 
     if (!user) {
+      user = await MockData.findUserByEmail(email);
+      if (user) console.log('✅ User found in mock');
+    }
+
+    if (!user) {
+      console.log('❌ User not found:', email);
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
     // Compare password (try DB method first, fallback to mock)
     let isValidPassword = false;
     try {
-      isValidPassword = await user.comparePassword(password);
+      if (user.comparePassword) {
+        isValidPassword = await user.comparePassword(password);
+        console.log('✅ Password verified via DB method');
+      } else {
+        isValidPassword = await MockData.comparePassword(password, user.password);
+        console.log('✅ Password verified via mock');
+      }
     } catch (err) {
-      console.log('Password compare error, using mock:', err.message);
+      console.log('Password compare error:', err.message);
       isValidPassword = await MockData.comparePassword(password, user.password);
     }
 
     if (!isValidPassword) {
+      console.log('❌ Invalid password for:', email);
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
+    console.log('✅ Login successful:', email);
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'test-secret');
     res.json({ token, user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
   } catch (err) {
+    console.log('❌ Unexpected error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

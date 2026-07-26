@@ -11,7 +11,7 @@ const defaultUsers = [
     firstName: 'Admin',
     lastName: 'AZULAN',
     email: 'admin@azulan.fr',
-    password: '$2a$10$mockhashedpassword', // hashed 'admin123'
+    password: '$2b$10$4pa4DzuOaSDQsQuNhuLbUey62ZZL3x7j7/cBSz9r4IrTI6siDhvGe', // hashed 'admin123'
     role: 'admin',
     newsletter: false,
     createdAt: new Date(),
