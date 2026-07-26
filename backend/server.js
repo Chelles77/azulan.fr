@@ -24,9 +24,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 
 // Base de données
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+})
   .then(() => console.log('✅ MongoDB connecté'))
-  .catch(err => console.error('❌ MongoDB erreur:', err));
+  .catch(err => {
+    console.error('⚠️ MongoDB erreur (en mode test):', err.message);
+    console.log('💡 TIP: Installer MongoDB localement ou configurer MongoDB Atlas');
+  });
 
 // Démarrer le serveur
 const PORT = process.env.PORT || 5000;
