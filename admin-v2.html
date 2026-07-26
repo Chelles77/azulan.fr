@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin AZULAN - API Version</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #1a365d; --accent: #ff6b35; --gray-light: #f5f5f5; }
+        body { font-family: 'Inter', sans-serif; background: var(--gray-light); color: #000; }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: var(--primary); color: white; padding: 2rem 1rem; position: fixed; height: 100vh; overflow-y: auto; z-index: 100; }
+        .sidebar h2 { margin-bottom: 2rem; font-size: 1.2rem; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin-bottom: 0.5rem; }
+        .sidebar-menu button { width: 100%; background: none; border: none; color: white; padding: 0.75rem; text-align: left; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
+        .sidebar-menu button:hover, .sidebar-menu button.active { background: var(--accent); }
+        .logout-btn { width: 100%; background: var(--accent); color: white; padding: 0.75rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 2rem; }
+        .main-content { margin-left: 250px; flex: 1; padding: 2rem; }
+        .section { display: none; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .section.active { display: block; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        input, textarea, select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; font-family: 'Inter', sans-serif; }
+        button { background: var(--primary); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        button:hover { background: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: var(--primary); color: white; }
+        h3 { margin-top: 2rem; margin-bottom: 1rem; color: var(--primary); }
+        .message { padding: 1rem; margin-bottom: 1rem; border-radius: 4px; display: none; }
+        .message.success { background: #e8f5e9; color: #388e3c; display: block; }
+        .message.error { background: #ffebee; color: #d32f2f; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>ADMIN API</h2>
+            <ul class="sidebar-menu">
+                <li><button onclick="showSection('produits')" class="active">Produits</button></li>
+                <li><button onclick="showSection('clients')">Clients</button></li>
+                <li><button onclick="showSection('commandes')">Commandes</button></li>
+            </ul>
+            <button class="logout-btn" onclick="logout()">Deconnexion</button>
+        </div>
+
+        <div class="main-content">
+            <!-- PRODUITS -->
+            <div id="produits" class="section active">
+                <h2>Gestion des Produits (API)</h2>
+                <div id="msgProduit" class="message"></div>
+
+                <h3>Ajouter Produit</h3>
+                <form onsubmit="saveProduit(event)">
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="prodNom" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Categorie</label>
+                        <select id="prodCategorie" required>
+                            <option>Electromenager</option>
+                            <option>Aspirateurs</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Prix (EUR)</label>
+                        <input type="number" id="prodPrix" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Stock</label>
+                        <input type="number" id="prodStock" value="0">
+                    </div>
+                    <button type="submit">Enregistrer</button>
+                </form>
+
+                <h3>Tous les Produits</h3>
+                <table id="produitsList">
+                    <thead><tr><th>Nom</th><th>Categorie</th><th>Prix</th><th>Stock</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- CLIENTS -->
+            <div id="clients" class="section">
+                <h2>Gestion des Clients</h2>
+                <table id="clientsList">
+                    <thead><tr><th>Email</th><th>Nom</th><th>Inscription</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- COMMANDES -->
+            <div id="commandes" class="section">
+                <h2>Gestion des Commandes</h2>
+                <table id="commandesList">
+                    <thead><tr><th>ID</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const TOKEN = localStorage.getItem('token');
+
+        function init() {
+            if (!TOKEN) {
+                window.location.href = 'connexion.html';
+                return;
+            }
+            loadProduits();
+            loadClients();
+            loadCommandes();
+        }
+
+        function showSection(s) {
+            document.querySelectorAll('.section').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.sidebar-menu button').forEach(e => e.classList.remove('active'));
+            document.getElementById(s).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function saveProduit(e) {
+            e.preventDefault();
+            try {
+                const res = await fetch(`${API_URL}/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+                    body: JSON.stringify({
+                        nom: document.getElementById('prodNom').value,
+                        categorie: document.getElementById('prodCategorie').value,
+                        prix: parseFloat(document.getElementById('prodPrix').value),
+                        stock: parseInt(document.getElementById('prodStock').value)
+                    })
+                });
+                if (res.ok) {
+                    e.target.reset();
+                    loadProduits();
+                    showMessage('msgProduit', 'Produit enregistre!', 'success');
+                } else {
+                    showMessage('msgProduit', 'Erreur', 'error');
+                }
+            } catch (err) {
+                showMessage('msgProduit', err.message, 'error');
+            }
+        }
+
+        async function loadProduits() {
+            try {
+                const res = await fetch(`${API_URL}/products`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const prods = await res.json();
+                const tbody = document.querySelector('#produitsList tbody');
+                tbody.innerHTML = '';
+                prods.forEach(p => {
+                    tbody.innerHTML += `<tr><td>${p.nom}</td><td>${p.categorie}</td><td>${p.prix}EUR</td><td>${p.stock}</td><td><button onclick="deleteProduit('${p._id}')">Supprimer</button></td></tr>`;
+                });
+            } catch (err) {
+                console.error('Erreur:', err);
+            }
+        }
+
+        async function deleteProduit(id) {
+            try {
+                await fetch(`${API_URL}/products/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                loadProduits();
+            } catch (err) {
+                console.error('Erreur:', err);
+            }
+        }
+
+        async function loadClients() {
+            try {
+                const res = await fetch(`${API_URL}/auth/users`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const users = await res.json();
+                const tbody = document.querySelector('#clientsList tbody');
+                tbody.innerHTML = '';
+                users.forEach(u => {
+                    tbody.innerHTML += `<tr><td>${u.email}</td><td>${u.firstName} ${u.lastName}</td><td>${new Date(u.createdAt).toLocaleDateString()}</td></tr>`;
+                });
+            } catch (err) {
+                console.error('Erreur:', err);
+            }
+        }
+
+        async function loadCommandes() {
+            try {
+                const res = await fetch(`${API_URL}/orders`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const orders = await res.json();
+                const tbody = document.querySelector('#commandesList tbody');
+                tbody.innerHTML = '';
+                orders.forEach(o => {
+                    tbody.innerHTML += `<tr><td>${o._id}</td><td>${o.total}EUR</td><td>${o.status}</td><td>${new Date(o.createdAt).toLocaleDateString()}</td></tr>`;
+                });
+            } catch (err) {
+                console.error('Erreur:', err);
+            }
+        }
+
+        function showMessage(id, text, type) {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.className = `message ${type}`;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'connexion.html';
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
