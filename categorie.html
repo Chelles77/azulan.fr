@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produits - AZULAN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #1a365d; --accent: #ff6b35; --gray-light: #f5f5f5; }
+        body { font-family: 'Inter', sans-serif; background: var(--gray-light); color: #000; }
+        header { background: white; padding: 1.5rem 2rem; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+        nav { display: flex; gap: 2rem; }
+        nav a { text-decoration: none; color: #000; font-weight: 500; }
+        nav a:hover { color: var(--accent); }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+        h2 { color: var(--primary); margin-bottom: 1.5rem; }
+        .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+        .product { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .product-image { width: 100%; height: 200px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; }
+        .product-info { padding: 1.5rem; }
+        .product h3 { color: var(--primary); margin-bottom: 0.5rem; }
+        .price { font-size: 1.5rem; color: var(--accent); font-weight: 700; margin-bottom: 1rem; }
+        .btn { display: inline-block; background: var(--primary); color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: 600; }
+        .btn:hover { background: var(--accent); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🛍️ AZULAN</div>
+        <nav>
+            <a href="index.html">Accueil</a>
+            <a href="panier.html">Panier</a>
+            <a href="connexion.html">Connexion</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>📦 Nos Produits</h2>
+        <div class="products" id="products"></div>
+    </div>
+
+    <script>
+        const products = JSON.parse(localStorage.getItem('azulan_products') || '{}');
+        const container = document.getElementById('products');
+        
+        Object.values(products).forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'product';
+            div.innerHTML = `
+                <div class="product-image">📷</div>
+                <div class="product-info">
+                    <h3>${p.nom}</h3>
+                    <p>${p.description || ''}</p>
+                    <div class="price">${p.prixActuel}€</div>
+                    <button onclick="addToCart('${p.id}')" class="btn">Ajouter au panier</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        
+        function addToCart(id) {
+            const cart = JSON.parse(localStorage.getItem('azulan_cart') || '[]');
+            cart.push(id);
+            localStorage.setItem('azulan_cart', JSON.stringify(cart));
+            alert('✅ Produit ajouté au panier!');
+        }
+    </script>
+</body>
+</html>

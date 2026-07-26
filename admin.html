@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin AZULAN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #1a365d; --accent: #ff6b35; --gray-light: #f5f5f5; }
+        body { font-family: 'Inter', sans-serif; background: var(--gray-light); color: #000; }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: var(--primary); color: white; padding: 2rem 1rem; position: fixed; height: 100vh; overflow-y: auto; z-index: 100; }
+        .sidebar h2 { margin-bottom: 2rem; font-size: 1.2rem; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin-bottom: 0.5rem; }
+        .sidebar-menu button { width: 100%; background: none; border: none; color: white; padding: 0.75rem; text-align: left; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
+        .sidebar-menu button:hover, .sidebar-menu button.active { background: var(--accent); }
+        .logout-btn { width: 100%; background: var(--accent); color: white; padding: 0.75rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 2rem; }
+        .main-content { margin-left: 250px; flex: 1; padding: 2rem; }
+        .section { display: none; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .section.active { display: block; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        input, textarea, select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; font-family: 'Inter', sans-serif; }
+        button { background: var(--primary); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        button:hover { background: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: var(--primary); color: white; }
+        h3 { margin-top: 2rem; margin-bottom: 1rem; color: var(--primary); }
+        .message { padding: 1rem; margin-bottom: 1rem; border-radius: 4px; display: none; }
+        .message.success { background: #e8f5e9; color: #388e3c; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>ADMIN</h2>
+            <ul class="sidebar-menu">
+                <li><button onclick="showSection('produits')" class="active">Produits</button></li>
+                <li><button onclick="showSection('clients')">Clients</button></li>
+                <li><button onclick="showSection('collaborateurs')">Collaborateurs</button></li>
+            </ul>
+            <button class="logout-btn" onclick="logout()">Deconnexion</button>
+        </div>
+
+        <div class="main-content">
+            <div id="produits" class="section active">
+                <h2>Gestion des Produits</h2>
+                <h3>Ajouter Produit</h3>
+                <form onsubmit="saveProduit(event)">
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="prodNom" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Categorie</label>
+                        <select id="prodCategorie" required>
+                            <option>Electromenager</option>
+                            <option>Aspirateurs</option>
+                            <option>Robots</option>
+                            <option>Cafetiere</option>
+                            <option>Airfryer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Marque</label>
+                        <input type="text" id="prodMarque">
+                    </div>
+                    <div class="form-group">
+                        <label>Prix (EUR)</label>
+                        <input type="number" id="prodPrix" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Stock</label>
+                        <input type="number" id="prodStock" value="0">
+                    </div>
+                    <button type="submit">Enregistrer</button>
+                </form>
+
+                <h3>Tous les Produits</h3>
+                <table id="produitsList">
+                    <thead><tr><th>Nom</th><th>Categorie</th><th>Prix</th><th>Stock</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="clients" class="section">
+                <h2>Gestion des Clients</h2>
+                <table id="clientsList">
+                    <thead><tr><th>Email</th><th>Nom</th><th>Inscription</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="collaborateurs" class="section">
+                <h2>Gestion Collaborateurs</h2>
+                <h3>Ajouter</h3>
+                <form onsubmit="addCollab(event)">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="collabEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="collabPassword" required>
+                    </div>
+                    <button type="submit">Ajouter</button>
+                </form>
+                <table id="collabsList" style="margin-top: 2rem;">
+                    <thead><tr><th>Email</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function init() {
+            loadProduits();
+            loadClients();
+            loadCollabs();
+        }
+        function showSection(s) {
+            document.querySelectorAll('.section').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.sidebar-menu button').forEach(e => e.classList.remove('active'));
+            document.getElementById(s).classList.add('active');
+            event.target.classList.add('active');
+        }
+        function saveProduit(e) {
+            e.preventDefault();
+            const prods = JSON.parse(localStorage.getItem('azulan_products') || '{}');
+            const id = Date.now();
+            prods[id] = {
+                id, nom: document.getElementById('prodNom').value,
+                categorie: document.getElementById('prodCategorie').value,
+                marque: document.getElementById('prodMarque').value,
+                prix: parseFloat(document.getElementById('prodPrix').value),
+                stock: parseInt(document.getElementById('prodStock').value)
+            };
+            localStorage.setItem('azulan_products', JSON.stringify(prods));
+            e.target.reset();
+            loadProduits();
+        }
+        function loadProduits() {
+            const prods = JSON.parse(localStorage.getItem('azulan_products') || '{}');
+            const tbody = document.querySelector('#produitsList tbody');
+            tbody.innerHTML = '';
+            Object.values(prods).forEach(p => {
+                tbody.innerHTML += `<tr><td>${p.nom}</td><td>${p.categorie}</td><td>${p.prix}EUR</td><td>${p.stock}</td><td><button onclick="deleteProduit(${p.id})">Supprimer</button></td></tr>`;
+            });
+        }
+        function deleteProduit(id) {
+            const prods = JSON.parse(localStorage.getItem('azulan_products') || '{}');
+            delete prods[id];
+            localStorage.setItem('azulan_products', JSON.stringify(prods));
+            loadProduits();
+        }
+        function loadClients() {
+            const tbody = document.querySelector('#clientsList tbody');
+            tbody.innerHTML = '<tr><td colspan="3">Pas de clients</td></tr>';
+        }
+        function addCollab(e) {
+            e.preventDefault();
+            const collabs = JSON.parse(localStorage.getItem('azulan_collabs') || '{}');
+            collabs[document.getElementById('collabEmail').value] = { pwd: document.getElementById('collabPassword').value };
+            localStorage.setItem('azulan_collabs', JSON.stringify(collabs));
+            e.target.reset();
+            loadCollabs();
+        }
+        function loadCollabs() {
+            const collabs = JSON.parse(localStorage.getItem('azulan_collabs') || '{}');
+            const tbody = document.querySelector('#collabsList tbody');
+            tbody.innerHTML = '';
+            Object.keys(collabs).forEach(email => {
+                tbody.innerHTML += `<tr><td>${email}</td><td><button onclick="deleteCollab('${email}')">Supprimer</button></td></tr>`;
+            });
+        }
+        function deleteCollab(email) {
+            const collabs = JSON.parse(localStorage.getItem('azulan_collabs') || '{}');
+            delete collabs[email];
+            localStorage.setItem('azulan_collabs', JSON.stringify(collabs));
+            loadCollabs();
+        }
+        function logout() {
+            localStorage.removeItem('azulan_user');
+            window.location.href = 'connexion.html';
+        }
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
