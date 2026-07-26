@@ -42,30 +42,47 @@
     </div>
 
     <script>
-        const products = JSON.parse(localStorage.getItem('azulan_products') || '{}');
+        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://azulan-fr.onrender.com/api';
         const container = document.getElementById('products');
-        
-        Object.values(products).forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'product';
-            div.innerHTML = `
-                <div class="product-image">📷</div>
-                <div class="product-info">
-                    <h3>${p.nom}</h3>
-                    <p>${p.description || ''}</p>
-                    <div class="price">${p.prixActuel}€</div>
-                    <button onclick="addToCart('${p.id}')" class="btn">Ajouter au panier</button>
-                </div>
-            `;
-            container.appendChild(div);
-        });
-        
+
+        async function loadProducts() {
+            try {
+                const res = await fetch(`${API_URL}/products`);
+                const products = await res.json();
+
+                if (products.length === 0) {
+                    container.innerHTML = '<p>Aucun produit disponible</p>';
+                    return;
+                }
+
+                products.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'product';
+                    div.innerHTML = `
+                        <div class="product-image">📷</div>
+                        <div class="product-info">
+                            <h3>${p.nom}</h3>
+                            <p>${p.description || ''}</p>
+                            <div class="price">${p.prix}€</div>
+                            <button onclick="addToCart('${p.id}')" class="btn">Ajouter au panier</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error('Erreur chargement produits:', err);
+                container.innerHTML = '<p>❌ Erreur chargement produits</p>';
+            }
+        }
+
         function addToCart(id) {
             const cart = JSON.parse(localStorage.getItem('azulan_cart') || '[]');
             cart.push(id);
             localStorage.setItem('azulan_cart', JSON.stringify(cart));
             alert('✅ Produit ajouté au panier!');
         }
+
+        loadProducts();
     </script>
 </body>
 </html>
