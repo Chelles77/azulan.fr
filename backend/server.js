@@ -1,6 +1,6 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
+const sequelize = require('./config');
 require('dotenv').config();
 
 const app = express();
@@ -23,21 +23,20 @@ app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 
-// Base de données
-mongoose.connect(process.env.MONGODB_URI, {
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-})
-  .then(() => console.log('✅ MongoDB connecté'))
-  .catch(err => {
-    console.error('⚠️ MongoDB erreur (en mode test):', err.message);
-    console.log('💡 TIP: Installer MongoDB localement ou configurer MongoDB Atlas');
-  });
+// PostgreSQL Connection
+sequelize.authenticate()
+  .then(() => console.log('✅ PostgreSQL connected'))
+  .catch(err => console.error('❌ PostgreSQL error:', err.message));
 
-// Démarrer le serveur
+// Sync database models
+sequelize.sync({ alter: true })
+  .then(() => console.log('✅ Database synced'))
+  .catch(err => console.error('❌ Sync error:', err.message));
+
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ Serveur lancé sur http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
 
 module.exports = app;
